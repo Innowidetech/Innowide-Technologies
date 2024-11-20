@@ -4,7 +4,8 @@ var contactUs = require('../models/contactUs');
 var getInTouch = require('../models/getInTouch');
 var reachOut = require('../models/reachOut');
 var demoRequest = require('../models/demoRequest');
-var Blog = require('../models/blogs')
+var Blog = require('../models/blogs');
+var Login = require('../models/blogLogin');
 var nodemailer = require('nodemailer');
 require('dotenv').config();
 
@@ -62,7 +63,7 @@ router.post('/contact-us', (req, res) => {
           <p><strong>Name :</strong> ${fullName}</p>
           <p><strong>Email :</strong> ${email}</p>
           <p><strong>Contact Number :</strong> ${phoneNumber}</p>
-          <p><strong>Message :</strong><span style="display: inline-block; margin-left: 10px;"> "${message}"</span></p>
+          <p><strong>Message :</strong><span style="display: inline-block; margin-left: 10px;"> ${message}</span></p>
 
         </div>
       `;
@@ -107,7 +108,7 @@ router.post('/get-in-touch', (req, res) => {
           <p><strong>Name :</strong> ${firstName} ${lastName}</p>
           <p><strong>Email :</strong> ${email}</p>
           <p><strong>Contact Number :</strong> ${phoneNumber}</p>
-          <p><strong>Message :</strong><span style="display: inline-block; margin-left: 10px;"> "${message}"</span></p>
+          <p><strong>Message :</strong><span style="display: inline-block; margin-left: 10px;"> ${message}</span></p>
         </div>
       `;
       sendMailToAdmin(email, emailSubjectToAdmin, emailTextToAdmin)
@@ -202,7 +203,7 @@ router.post('/demo', (req, res) => {
           <p><strong>Name :</strong> ${name}</p>
           <p><strong>Email :</strong> ${email}</p>
           <p><strong>Contact Number :</strong> ${phoneNumber}</p>
-          <p><strong>Message :</strong><span style="display: inline-block; margin-left: 10px;"> "${message}"</span></p>
+          <p><strong>Message :</strong><span style="display: inline-block; margin-left: 10px;"> ${message}</span></p>
           <p><strong>Mode of Communication :</strong> ${modeOfCommunication}</p>
           <p><strong>Category :</strong> ${category}</p>          
         </div>`
@@ -221,7 +222,7 @@ router.post('/demo', (req, res) => {
                 <ul>
                   <li><strong>Email:</strong> ${email}</li>
                   <li><strong>Contact Number:</strong> ${phoneNumber}</li>
-                  <li><strong>Message:</strong> <span style="display: inline-block; margin-left: 10px;"> "${message}"</span></li>
+                  <li><strong>Message:</strong> <span style="display: inline-block; margin-left: 10px;"> ${message}</span></li>
                   <li><strong>Mode of Communication:</strong> ${modeOfCommunication}</li>
                   <li><strong>Category:</strong> ${category}</li>
                 </ul>
@@ -250,9 +251,24 @@ router.post('/blogs',(req,res)=>{
 
 router.get('/blogs', (req, res) => {
   Blog.find()
-    .sort({ createdAt: -1 }) // Sort by createdAt in descending order
+    .sort({ createdAt: -1 }) 
     .then((blogs) => res.status(200).json(blogs))
     .catch((err) => res.status(500).send(`Error retrieving blogs: ${err.message}`));
 });
+
+
+//login
+router.post('/login',(req,res)=>{
+  Login.findOne({password:req.body.password})
+  .then((user)=>{
+    if(user){
+        res.send("Login Success")
+      }
+      else{
+        res.send("You are not allowed to Login")
+      }
+  })
+});
+
 
 module.exports = router;
