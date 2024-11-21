@@ -167,7 +167,7 @@ router.post('/reach-out', (req, res) => {
           });
           emailListHTML += `</ul></div>`;
           const emailSubjectToAdmin = 'New Reach Out Submissions';
-          sendMail(process.env.EMAIL_ID, emailSubjectToAdmin, emailListHTML, latestEmail.email)
+          sendMailToAdmin(process.env.EMAIL_ID, emailSubjectToAdmin, emailListHTML, latestEmail.email)
             .then(() => {
               res.status(200).send('Reach out form submitted successfully!');
             })
@@ -257,18 +257,17 @@ router.get('/blogs', (req, res) => {
 });
 
 
-//login
+//login to post blogs
 router.post('/login',(req,res)=>{
   Login.findOne({password:req.body.password})
   .then((user)=>{
     if(user){
-        res.send("Login Success")
+        res.status(200).send("Login Success")
       }
       else{
-        res.send("You are not allowed to Login")
+        res.statusapply(404).send("You are not allowed to Login")
       }
   })
 });
-
 
 module.exports = router;
