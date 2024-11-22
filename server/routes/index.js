@@ -1,15 +1,18 @@
-var express = require('express');
-var router = express.Router();
-var contactUs = require('../models/contactUs');
-var getInTouch = require('../models/getInTouch');
-var reachOut = require('../models/reachOut');
-var demoRequest = require('../models/demoRequest');
-var Blog = require('../models/blogs');
-var Login = require('../models/blogLogin');
-var nodemailer = require('nodemailer');
+const express = require('express');
+const router = express.Router();
+const contactUs = require('../models/contactUs');
+const getInTouch = require('../models/getInTouch');
+const reachOut = require('../models/reachOut');
+const demoRequest = require('../models/demoRequest');
+const Blog = require('../models/blogs');
+const Login = require('../models/blogLogin');
+const nodemailer = require('nodemailer');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
-const {CloudinaryStorage} = require('multer-storage-cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const isAuthenticated = require('../middleware/isAuth')
 require('dotenv').config();
 
 //cloudinary for blogs
@@ -23,7 +26,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-      folder: 'blogs',
+    folder: 'blogs',
     allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
   },
 });
@@ -45,7 +48,7 @@ var transporter = nodemailer.createTransport({
 function sendMailToClient(subject, htmlContent, toEmail) {
   const mailOptions = {
     from: process.env.EMAIL_ID,
-    to: toEmail, 
+    to: toEmail,
     subject: subject,
     html: htmlContent,
     replyTo: process.env.EMAIL_ID,
@@ -228,11 +231,11 @@ router.post('/demo', (req, res) => {
           <p><strong>Mode of Communication :</strong> ${modeOfCommunication}</p>
           <p><strong>Category :</strong> ${category}</p>          
         </div>`
-      ;
+        ;
       sendMailToAdmin(email, emailSubjectToAdmin, emailTextToAdmin)
         .then(() => {
           // Email to Client
-          const emailSubjectToClient =`Innowide Technologies - Demo Request for ${category}`;
+          const emailSubjectToClient = `Innowide Technologies - Demo Request for ${category}`;
           const emailTextToClient = `
             <div style="border: 1px solid #ccc; border-radius: 5px; padding: 20px; max-width: 600px; font-family: Arial, sans-serif;">
               <h1 style="color: #333;">Hello ${name},</h1>
@@ -251,7 +254,7 @@ router.post('/demo', (req, res) => {
               <p>Our team will further communicate with you through <strong>${modeOfCommunication}</strong>.</p><br>
               <p>Best regards,<br>Innowide Technologies Team.</p>
             </div>`
-          ;
+            ;
           sendMailToClient(emailSubjectToClient, emailTextToClient, email)
             .then(() => res.status(200).send('Demo request submitted successfully!'))
             .catch((err) => res.status(500).send(`Error sending acknowledgment email to client: ${err.message}`));
@@ -261,38 +264,94 @@ router.post('/demo', (req, res) => {
     .catch((err) => res.status(404).send(`Error submitting form: ${err.message}`));
 });
 
-//Blogs section
-router.post('/blogs', upload.single('image'), (req, res) => {
+//post blogs
+router.post('/blogs', isAuthenticated, upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
-  }
+  };
   const { title, tags, description } = req.body;
+
   const image = req.file.path;
+  
   const blog = new Blog({ title, tags, description, image });
   blog.save()
-    .then(() => res.status(201).json('Blog saved successfully!'))
+    .then(() => res.status(201).json('Blog posted successfully!'))
     .catch((err) => res.status(500).json(`Error saving blog: ${err.message}`));
 });
 
+//get all blogs
 router.get('/blogs', (req, res) => {
   Blog.find()
-    .sort({ createdAt: -1 }) 
+    .sort({ createdAt: -1 })
     .then((blogs) => res.status(200).json(blogs))
     .catch((err) => res.status(500).send(`Error retrieving blogs: ${err.message}`));
 });
 
+//delete a blog
+router.delete('/blogs/:id',isAuthenticated,(req,res)=>{
+  var id=req.params.id;
+  Blog.findByIdAndDelete(id)
+  .then((blog)=>{
+    if(blog){
+      res.send("Blog deleted successfully")
+    }
+    else{
+      res.send("No blog found")
+    }
+  })
+  .catch((err)=>res.send("Invalid blog ID"))
+});
+
 
 //login to post blogs
-router.post('/login',(req,res)=>{
-  Login.findOne({password:req.body.password})
-  .then((user)=>{
-    if(user){
-        res.status(200).send("Login Success")
+router.post('/login', (req, res) => {
+  Login.findOne({ userName: req.body.userName })
+    .then((user) => {
+      if (user) {
+        if (bcrypt.compareSync(req.body.password, user.password)) {
+          const token = jwt.sign(
+            { id: user._id, userName: user.userName },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+          );
+          res.status(200).json({
+            message: "Login success",
+            userName: user.userName,
+            token: token
+          })
+        }
+        else {
+          res.status(404).json("You are not allowed to Login")
+        }
       }
-      else{
-        res.statusapply(404).send("You are not allowed to Login")
+      else {
+        res.send("User not found")
       }
-  })
+    })
 });
+
+//register
+// var hpass;
+// router.post('/register',(req,res)=>{
+//   Login.findOne({userName:req.body.userName})
+//   .then((userName)=>{
+//     if(userName){
+//       res.send('User already exist')
+//     }
+//     else{
+//       hpass=bcrypt.hashSync(req.body.password,8);
+//       var newUser= new Login({
+//         userName:req.body.userName,
+//         password:hpass,
+//       });
+//       newUser.save()
+//       .then((user)=>{
+//         res.send("User registered successfully")
+//       })
+//       .catch((err)=>res.send(err))
+//     }
+//   })
+//   .catch((err)=>res.send(err))
+// });
 
 module.exports = router;
