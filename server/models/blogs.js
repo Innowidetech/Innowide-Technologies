@@ -11,5 +11,9 @@ const blogSchema = new mongoose.Schema({
         type:String,
         require:true,
     },
+    image: {
+        type: String,
+        required: true,
+    },
 },{timestamps:true});
 module.exports = mongoose.model('Blog',blogSchema);

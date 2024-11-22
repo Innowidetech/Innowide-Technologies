@@ -7,7 +7,28 @@ var demoRequest = require('../models/demoRequest');
 var Blog = require('../models/blogs');
 var Login = require('../models/blogLogin');
 var nodemailer = require('nodemailer');
+const cloudinary = require('cloudinary').v2;
+const multer = require('multer');
+const {CloudinaryStorage} = require('multer-storage-cloudinary');
 require('dotenv').config();
+
+//cloudinary for blogs
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Configure Multer with Cloudinary Storage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+      folder: 'blogs',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+  },
+});
+const upload = multer({ storage: storage });
+
 
 // Nodemailer transporter setup
 var transporter = nodemailer.createTransport({
@@ -241,13 +262,17 @@ router.post('/demo', (req, res) => {
 });
 
 //Blogs section
-router.post('/blogs',(req,res)=>{
-  const {title, tags, description} = req.body;
-  const blog = new Blog({ title, tags, description });
+router.post('/blogs', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+  }
+  const { title, tags, description } = req.body;
+  const image = req.file.path;
+  const blog = new Blog({ title, tags, description, image });
   blog.save()
-  .then(()=>res.status(201).send('Blog saved successfully!'))
-  .catch((err) => res.status(500).send(`Error saving blog: ${err.message}`));
-});  
+    .then(() => res.status(201).json('Blog saved successfully!'))
+    .catch((err) => res.status(500).json(`Error saving blog: ${err.message}`));
+});
 
 router.get('/blogs', (req, res) => {
   Blog.find()
