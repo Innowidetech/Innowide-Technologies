@@ -334,6 +334,19 @@ router.post('/blogs', isAuthenticated, upload.single('image'), (req, res) => {
     .catch((err) => res.status(500).json(`Error saving blog: ${err.message}`));
 });
 
+//edit blog
+router.put('/blogs/:id',isAuthenticated,(req,res)=>{
+  var id=req.params.id;
+  var update=req.body;
+
+  if (update.description) {
+    update.description = sanitizeHtml(update.description);
+  }
+  Blog.findByIdAndUpdate(id, update, { new: true })
+  .then((blog)=>res.status(200).send(blog))
+  .catch((err)=>res.status(404).send(err))
+});
+
 //get all blogs
 router.get('/blogs', (req, res) => {
   Blog.find()
@@ -365,13 +378,5 @@ router.get('/blogs/:id', (req,res)=>{
   .catch((err)=>res.send("No blog found", err))
 });
 
-//edit blog
-router.put('/blogs/:id',isAuthenticated,(req,res)=>{
-  var id=req.params.id;
-  var update=req.body;
-  Blog.findByIdAndUpdate(id, update)
-  .then((blog)=>res.status(200).send(blog))
-  .catch((err)=>res.status(404).send(err))
-});
 
 module.exports = router;
