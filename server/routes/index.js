@@ -14,6 +14,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const isAuthenticated = require('../middleware/isAuth')
 require('dotenv').config();
+const sanitizeHtml = require('sanitize-html')
 
 //cloudinary for blogs
 cloudinary.config({
@@ -323,10 +324,11 @@ router.post('/blogs', isAuthenticated, upload.single('image'), (req, res) => {
     return res.status(400).send('No file uploaded.');
   };
   const { title, tags, description } = req.body;
+  const sanitizedDescription = sanitizeHtml(description);
 
   const image = req.file.path;
   
-  const blog = new Blog({ title, tags, description, image });
+  const blog = new Blog({ title, tags, description:sanitizedDescription, image });
   blog.save()
     .then(() => res.status(201).json('Blog posted successfully!'))
     .catch((err) => res.status(500).json(`Error saving blog: ${err.message}`));
