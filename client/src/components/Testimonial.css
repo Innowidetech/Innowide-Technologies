@@ -1,0 +1,21 @@
+/* Styling for left-side images */
+.left-img {
+    left: 10%; /* Adjust position on the left side */
+  }
+  
+  /* Styling for right-side images */
+  .right-img {
+    right: 10%; /* Adjust position on the right side */
+  }
+  
+  /* Ensure swiper slide has relative positioning */
+  .swiper-slide {
+    position: relative;
+  }
+  
+  /* Make sure swiper container allows overflow */
+  .swiper-container {
+    overflow: visible; /* Allow content to go outside */
+  }
+  
+  
