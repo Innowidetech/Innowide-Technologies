@@ -264,44 +264,6 @@ router.post('/demo', (req, res) => {
     .catch((err) => res.status(404).send(`Error submitting form: ${err.message}`));
 });
 
-//post blogs
-router.post('/blogs', isAuthenticated, upload.single('image'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).send('No file uploaded.');
-  };
-  const { title, tags, description } = req.body;
-
-  const image = req.file.path;
-  
-  const blog = new Blog({ title, tags, description, image });
-  blog.save()
-    .then(() => res.status(201).json('Blog posted successfully!'))
-    .catch((err) => res.status(500).json(`Error saving blog: ${err.message}`));
-});
-
-//get all blogs
-router.get('/blogs', (req, res) => {
-  Blog.find()
-    .sort({ createdAt: -1 })
-    .then((blogs) => res.status(200).json(blogs))
-    .catch((err) => res.status(500).send(`Error retrieving blogs: ${err.message}`));
-});
-
-//delete a blog
-router.delete('/blogs/:id',isAuthenticated,(req,res)=>{
-  var id=req.params.id;
-  Blog.findByIdAndDelete(id)
-  .then((blog)=>{
-    if(blog){
-      res.send("Blog deleted successfully")
-    }
-    else{
-      res.send("No blog found")
-    }
-  })
-  .catch((err)=>res.send("Invalid blog ID"))
-});
-
 
 //login to post blogs
 router.post('/login', (req, res) => {
@@ -353,5 +315,61 @@ router.post('/login', (req, res) => {
 //   })
 //   .catch((err)=>res.send(err))
 // });
+
+
+//post blogs
+router.post('/blogs', isAuthenticated, upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+  };
+  const { title, tags, description } = req.body;
+
+  const image = req.file.path;
+  
+  const blog = new Blog({ title, tags, description, image });
+  blog.save()
+    .then(() => res.status(201).json('Blog posted successfully!'))
+    .catch((err) => res.status(500).json(`Error saving blog: ${err.message}`));
+});
+
+//get all blogs
+router.get('/blogs', (req, res) => {
+  Blog.find()
+    .sort({ createdAt: -1 })
+    .then((blogs) => res.status(200).json(blogs))
+    .catch((err) => res.status(500).send(`Error retrieving blogs: ${err.message}`));
+});
+
+//delete a blog
+router.delete('/blogs/:id',isAuthenticated,(req,res)=>{
+  var id=req.params.id;
+  Blog.findByIdAndDelete(id)
+  .then((blog)=>{
+    if(blog){
+      res.send("Blog deleted successfully")
+    }
+    else{
+      res.send("No blog found")
+    }
+  })
+  .catch((err)=>res.send("Invalid blog ID"))
+});
+
+//get blog by id
+router.get('/blogs/:id', (req,res)=>{
+  var id= req.params.id;
+  Blog.findOne({_id:id})
+  .then((blog)=>res.send(blog))
+  .catch((err)=>res.send("No blog found", err))
+});
+
+//edit blog
+router.put('/blogs/:id',isAuthenticated,(req,res)=>{
+  var id=req.params.id;
+  var update=req.body;
+  Blog.findByIdAndUpdate(id, update)
+  .then((blog)=>res.status(200).send(blog))
+  .catch((err)=>res.status(404).send(err))
+});
 
 module.exports = router;
